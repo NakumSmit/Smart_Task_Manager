@@ -9,46 +9,45 @@
 </head>
 
 <body>
-
-    <header>
-        <h1>Smart Task Manager</h1>
-    </header>
+    <div id="head-container">
+        <header>
+            <h1>Smart Task Manager</h1>
+        </header>
+    </div>
 
     <main>
-        <form>
-            <div id="form-container">
+        <div id="form">
+            <form id="task-form">
+                <div id="form-container">
 
-                <h2>Add New Task</h2>
+                    <h2>Add New Task</h2>
 
-                <label for="title">Title:</label>
-                <input type="text" id="title" name="title" placeholder="Enter Task Title" required><br>
+                    <label for="taskTitle">Title:</label>
+                    <input type="text" id="taskTitle" name="taskTitle" placeholder="Enter Task Title" required><br>
 
-                <label for="description">Description:</label>
-                <input type="text" id="description" name="description" placeholder="Enter Task Description"
-                    required><br>
+                    <label for="taskDescription">Description:</label>
+                    <input type="text" id="taskDescription" name="taskDescription" placeholder="Enter Task Description"
+                        required><br>
 
-                <div id="priority-container">
-                    <label for="priority">Task Priority:</label>
-                    <input type="radio" id="priority" name="priority" value="low">Low
-                    <input type="radio" id="priority" name="priority" value="medium">Medium
-                    <input type="radio" id="priority" name="priority" value="high">High
-                </div><br>
+                    <div id="priority-container">
+                        <label for="taskPriority">Task Priority:</label>
+                        <input type="radio" id="priorityLow" name="taskPriority" value="low" required>
+                        <label for="priorityLow">Low</label>
+                        <input type="radio" id="priorityMedium" name="taskPriority" value="medium">
+                        <label for="priorityMedium">Medium</label>
+                        <input type="radio" id="priorityHigh" name="taskPriority" value="high">
+                        <label for="priorityHigh">High</label>
+                    </div><br>
 
-                <button type="submit">Add Task</button>
+                    <button type="submit">Add Task</button>
 
-            </div>
-        </form>
+                </div>
+            </form>
+        </div>
         <div id="task-list">
             <h2>My Tasks</h2>
-            <div id="tasks">
-                <div class="task">
-                    <p>Task 1</p>
-                    <p>Priority: High</p>
-                    <p>This is task of making task manager.</p>
-                    <button>Delete</button>
-                    <button>Edit</button>
-                </div>
-            </div>
+            <ul id="tasks">
+            </ul>
         </div>
     </main>
     <script src="js/app.js"></script>
