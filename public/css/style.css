@@ -8,11 +8,12 @@ body {
 }
 
 header {
-    background-color: seashell;
+    background-color: #f4f4f4;
     padding: 1px;
     text-align: center;
     border: 1.5px solid black;
-    width: 50%;
+    width: 100%;
+    height: 100%;
     margin: auto;
     border-radius: 5px;
     box-sizing: border-box;
@@ -20,12 +21,12 @@ header {
 
 form,
 #task-list {
-    background-color: seashell;
+    background-color: #f4f4f4;
     border: 1.5px solid black;
-    width: 50%;
+    width: 100%;
     margin: auto;
     border-radius: 5px;
-    padding: 10px;
+    padding: 15px;
     margin-top: 20px;
     box-sizing: border-box;
 }
@@ -33,82 +34,14 @@ form,
 #form-container {
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
-#task-list {
-    display: flex;
-    flex-direction: column;
-}
-
-#task-list h2,
+/* #task-list h2,
 form h2 {
     text-align: center;
     border: 1.5px solid black;
     border-radius: 5px;
     margin-top: 5px;
-}
-
-.task {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    border: 1.5px solid black;
-    border-radius: 5px;
-    padding: 10px;
-    margin-bottom: 10px;
-    background-color: white;
-}
-
-.task-info h3 {
-    margin: 0 0 5px 0;
-}
-
-.task-info p {
-    margin: 5px 0;
-}
-
-.priority-badge {
-    font-size: 0.8em;
-    padding: 2px 6px;
-    border-radius: 12px;
-    color: white;
-    text-transform: uppercase;
-    margin-left: 10px;
-}
-
-.priority-badge.low {
-    background-color: #4CAF50;
-}
-
-.priority-badge.medium {
-    background-color: #FF9800;
-}
-
-.priority-badge.high {
-    background-color: #F44336;
-}
-
-.task-actions button {
-    padding: 5px 10px;
-    background-color: #F44336;
-    color: white;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-}
-
-.task-actions button:hover {
-    background-color: #d32f2f;
-}
-
-ul li {
-    list-style-type: none;
-}
-
-ul {
-    display: flex;
-    flex-direction: column;
-    margin: 10px 0;
-    padding: 0;
-}
+    padding-bottom: 5px;
+} */
