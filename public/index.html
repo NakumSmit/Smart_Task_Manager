@@ -19,10 +19,11 @@
 
     <main>
         <div id="form">
-            <form id="task-form" action="#" class="was-validated p-3 rounded">
+            <form id="task-form" action="#" class="needs-validation p-3 rounded" novalidate>
                 <div id="form-container">
 
-                    <h2 class="text-primary">Add New Task</h2><hr>
+                    <h2 class="text-primary">Add New Task</h2>
+                    <hr>
 
                     <label for="taskTitle">Title:</label>
                     <input type="text" id="taskTitle" name="taskTitle" placeholder="Enter Task Title" required>
@@ -53,18 +54,19 @@
                     </div><br>
 
                     <div id="button-container">
-                        <button class="btn btn-outline-success" style="width: 20%;" type="submit">Add Task</button>
-                        <button class="btn btn-outline-danger" style="width: 20%;" type="reset">Reset</button>
+                        <button class="btn btn-outline-primary" style="width: 15%;" type="submit">Add Task</button>
+                        <button class="btn btn-outline-danger" style="width: 15%;" type="reset">Reset</button>
                     </div>
 
                 </div>
             </form>
         </div>
         <div id="task-list">
-            <h2 class="text-primary">My Tasks</h2><hr>
+            <h2 class="text-primary">My Tasks</h2>
+            <hr>
             <div class="input-group mb-3">
-                <input type="text" class="form-control" placeholder="Search" id="search" onkeyup="searchTask()">
-                <button type="submit" class="btn btn-success">Search</button>
+                <button type="submit" class="btn btn-primary">Search</button>
+                <input type="text" class="form-control" placeholder="Search here..." id="search" onkeyup="searchTask()">
             </div>
             <table class="table table-bordered table-striped mt-3">
                 <thead class="table-primary border-primary">

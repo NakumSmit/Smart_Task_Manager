@@ -2,8 +2,16 @@
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
 //Add Task to the Table
-document.getElementById("task-form").addEventListener("submit", function (event) {
+const taskForm = document.getElementById("task-form");
+
+taskForm.addEventListener("submit", function (event) {
     event.preventDefault();
+
+    if (!taskForm.checkValidity()) {
+        event.stopPropagation();
+        taskForm.classList.add('was-validated');
+        return;
+    }
 
     const taskTitle = document.getElementById("taskTitle").value;
     const taskDescription = document.getElementById("taskDescription").value;
@@ -28,7 +36,13 @@ document.getElementById("task-form").addEventListener("submit", function (event)
     addTask(task);
 
     // Reset the form after submitting
-    document.getElementById("task-form").reset();
+    taskForm.reset();
+    taskForm.classList.remove('was-validated');
+});
+
+// Clear validation messages on reset
+taskForm.addEventListener("reset", function () {
+    taskForm.classList.remove('was-validated');
 });
 
 //Add Task to the Table
@@ -45,13 +59,14 @@ function addTask(task) {
     tr.innerHTML = `
         <td>${task.title}</td>
         <td>${task.id}</td>
-        <td>${task.description}</td>
+        <td style="width: 25%;">${task.description}</td>
         <td><span class="badge ${task.priority === 'high' ? 'bg-danger' : task.priority === 'medium' ? 'bg-warning text-dark' : 'bg-success'}">${task.priority}</span></td>
         <td>${task.createdAt}</td>
-        <td><span class="badge ${task.status === 'completed' ? 'bg-success' : 'bg-secondary'} status-text">${task.status}</span></td>
+        <td><span class="badge ${task.status === 'completed' ? 'bg-success' : 'bg-secondary'} statusText">${task.status}</span></td>
         <td>
             <button class="btn btn-danger btn-sm" onclick="deleteTask(this)">Delete</button>
             <button class="btn btn-success btn-sm" onclick="completeTask(this)" ${task.status === "completed" ? "disabled" : ""}>Completed</button>
+            <button class="btn btn-primary btn-sm" onclick="subtask(this)">Add SubTask</button>
         </td>
     `;
 
@@ -80,7 +95,7 @@ function completeTask(button) {
             saveTasks();
 
             // Update the status badge in the table
-            const statusBadge = tr.querySelector(".status-text");
+            const statusBadge = tr.querySelector(".statusText");
             if (statusBadge) {
                 statusBadge.textContent = "completed";
                 statusBadge.classList.replace("bg-secondary", "bg-success");
@@ -102,7 +117,7 @@ function saveTasks() {
     localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
-//Search Task
+//Search Task with debounce function
 function debounce(func, delay) {
     let timeout;
     return function (...args) {
@@ -116,6 +131,7 @@ function debounce(func, delay) {
     };
 }
 
+//Search Task
 function performSearch() {
     const query = document.getElementById("search").value.toLowerCase();
     const rows = document.querySelectorAll("#tasks tr");
@@ -130,5 +146,22 @@ function performSearch() {
         }
     });
 }
-
+//Attach the search task function with debounce
 const searchTask = debounce(performSearch, 300);
+
+//Scroll Logging with throttle function
+function throttle(func, delay) {
+    let timeout = null;
+    return function (...args) {
+        if (timeout) {
+            return;
+        }
+        timeout = setTimeout(() => {
+            func.apply(this, args);
+            timeout = null;
+        }, delay);
+    }
+}
+
+// Attach the scroll logging function to the scroll event with a throttle
+window.addEventListener("scroll", throttle(function () { }, 300));
