@@ -5,7 +5,6 @@ body {
     padding: 0;
     box-sizing: border-box;
     padding: 20px;
-    height: 150vh;
 }
 
 header {
@@ -38,11 +37,18 @@ form,
     height: 100%;
 }
 
-/* #task-list h2,
-form h2 {
-    text-align: center;
-    border: 1.5px solid black;
-    border-radius: 5px;
-    margin-top: 5px;
-    padding-bottom: 5px;
-} */
+.subtask-row td {
+    background-color: #fafafa !important;
+    color: #555;
+}
+
+.subtask-row td:first-child {
+    font-style: italic;
+}
+
+#btns {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background-color: #f4f4f4;
+}
