@@ -88,9 +88,6 @@ function createTaskRow(task, isSubtask = false) {
 
     const titleDisplay = isSubtask ? `<span class="ps-4">--> ${task.title}</span>` : task.title;
 
-    // Disable Add SubTask button for subtasks to prevent infinite nesting
-    const addSubTaskButton = isSubtask ? "" : `<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#inputModal" onclick="prepareSubTask(this)">Add SubTask</button>`;
-
     tr.innerHTML = `
         <td>${titleDisplay}</td>
         <td>${task.id}</td>
@@ -99,9 +96,11 @@ function createTaskRow(task, isSubtask = false) {
         <td>${task.createdAt}</td>
         <td><span class="badge ${task.status === 'completed' ? 'bg-success' : 'bg-secondary'} statusText">${task.status}</span></td>
         <td>
-            <button class="btn btn-danger btn-sm mb-1" onclick="deleteTask(this)">Delete</button>
-            <button class="btn btn-success btn-sm mb-1" onclick="completeTask(this)" ${task.status === "completed" ? "disabled" : ""}>Completed</button>
-            ${addSubTaskButton}
+            <div class="action-btns">
+                <button class="btn btn-success btn-sm" onclick="completeTask(this)" ${task.status === "completed" ? "disabled" : ""}>Completed</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteTask(this)">Delete</button>
+                ${isSubtask ? "" : `<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#inputModal" onclick="prepareSubTask(this)">Add SubTask</button>`}
+            </div>
         </td>
     `;
     return tr;

@@ -21,7 +21,7 @@ header {
 
 form,
 #task-list {
-    background-color: #f4f4f4;
+    background-color: #fafafa;
     border: 1.5px solid black;
     width: 100%;
     margin: auto;
@@ -37,18 +37,26 @@ form,
     height: 100%;
 }
 
+/* Action Buttons Flex Layout */
+.action-btns {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* Make buttons smaller */
+.action-btns .btn {
+    padding: 2px 8px;
+    font-size: 0.8rem;
+    line-height: 1.25;
+}
+
 .subtask-row td {
-    background-color: #fafafa !important;
+    background-color: #fcfcfc !important;
     color: #555;
 }
 
 .subtask-row td:first-child {
     font-style: italic;
-}
-
-#btns {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    background-color: #f4f4f4;
 }
