@@ -1,94 +1,104 @@
-//Get Tasks from Local Storage
-let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+const TaskApp = (function () {
+    //Get Tasks from Local Storage
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-//Add Task to the Table
-const taskForm = document.getElementById("task-form");
-
-taskForm.addEventListener("submit", function (event) {
-    event.preventDefault();
-
-    if (!taskForm.checkValidity()) {
-        event.stopPropagation();
-        taskForm.classList.add('was-validated');
-        return;
+    function Task(title, description, priority, status, parentId = null) {
+        this.title = title;
+        this.description = description;
+        this.priority = priority;
+        this.status = status;
+        this.parentId = parentId;
+        this.id = validId();
+        this.createdAt = new Date().toLocaleString();
     }
 
-    const taskTitle = document.getElementById("taskTitle").value;
-    const taskDescription = document.getElementById("taskDescription").value;
-    const taskPriority = document.querySelector('input[name="taskPriority"]:checked').value;
-    const taskStatus = document.querySelector('input[name="status"]:checked').value;
-
-    const task = {
-        title: taskTitle,
-        description: taskDescription,
-        priority: taskPriority,
-        id: validId(),
-        status: taskStatus,
-        createdAt: new Date().toLocaleString()
-    };
-
-    tasks.push(task);
-    saveTasks();
-    renderTasks();
-
-    // Reset the form after submitting
-    taskForm.reset();
-    taskForm.classList.remove('was-validated');
-});
-
-// Clear validation messages on reset
-taskForm.addEventListener("reset", function () {
-    taskForm.classList.remove('was-validated');
-});
-
-// State Management
-let currentParentId = null;
-
-function validId() {
-    return Math.random().toString(36).substring(2, 10);
-}
-
-function prepareSubTask(button) {
-    const tr = button.closest("tr");
-    if (tr) {
-        currentParentId = tr.dataset.id;
+    function ImportantTask(title, description, status, parentId = null) {
+        Task.call(this, title, description, "high", status, parentId);
+        this.important = true;
     }
-}
 
-//Render All Tasks
-function renderTasks() {
-    const taskList = document.getElementById("tasks");
-    taskList.innerHTML = ""; // Clear existing
+    ImportantTask.prototype = Object.create(Task.prototype);
+    ImportantTask.prototype.constructor = ImportantTask;
 
-    // 1. Filter out subtasks (they have a parentId)
-    const mainTasks = tasks.filter(t => !t.parentId);
+    //Add Task to the Table
+    const taskForm = document.getElementById("task-form");
 
-    // 2. Render each main task, and then immediately render its subtasks
-    mainTasks.forEach(mainTask => {
-        taskList.appendChild(createTaskRow(mainTask, false));
+    taskForm.addEventListener("submit", function (event) {
+        event.preventDefault();
 
-        const mySubtasks = tasks.filter(t => t.parentId === mainTask.id);
-        mySubtasks.forEach(subTask => {
-            taskList.appendChild(createTaskRow(subTask, true));
-        });
+        if (!taskForm.checkValidity()) {
+            event.stopPropagation();
+            taskForm.classList.add('was-validated');
+            return;
+        }
+
+        const taskTitle = document.getElementById("taskTitle").value;
+        const taskDescription = document.getElementById("taskDescription").value;
+        const taskPriority = document.querySelector('input[name="taskPriority"]:checked').value;
+        const taskStatus = document.querySelector('input[name="status"]:checked').value;
+
+        const task = taskPriority === "high"
+            ? new ImportantTask(taskTitle, taskDescription, taskStatus)
+            : new Task(taskTitle, taskDescription, taskPriority, taskStatus);
+
+        tasks.push(task);
+        saveTasks();
+        renderTasks();
+
+        // Reset the form after submitting
+        taskForm.reset();
+        taskForm.classList.remove('was-validated');
     });
-}
 
-function createTaskRow(task, isSubtask = false) {
-    const tr = document.createElement("tr");
-    tr.dataset.id = task.id;
+    // State Management
+    let currentParentId = null;
 
-    if (task.status === "completed") {
-        tr.classList.add("completed");
+    function validId() {
+        return Math.random().toString(36).substring(2, 10);
     }
 
-    if (isSubtask) {
-        tr.classList.add("subtask-row");
+    function prepareSubTask(button) {
+        const tr = button.closest("tr");
+        if (tr) {
+            currentParentId = tr.dataset.id;
+        }
     }
 
-    const titleDisplay = isSubtask ? `<span class="ps-4">--> ${task.title}</span>` : task.title;
+    //Render All Tasks
+    function renderTasks() {
+        const taskList = document.getElementById("tasks");
+        taskList.innerHTML = ""; // Clear existing
 
-    tr.innerHTML = `
+        // 1. Filter out subtasks (they have a parentId)
+        const mainTasks = tasks.filter(t => !t.parentId);
+
+        // 2. Render each main task, and then immediately render its subtasks
+        mainTasks.forEach(mainTask => {
+            taskList.appendChild(createTaskRow(mainTask, false));
+
+            const mySubtasks = tasks.filter(t => t.parentId === mainTask.id);
+            mySubtasks.forEach(subTask => {
+                taskList.appendChild(createTaskRow(subTask, true));
+            });
+        });
+    }
+
+    function createTaskRow(task, isSubtask = false) {
+        const importantIcon = task.important ? "🔥 " : "";
+        const tr = document.createElement("tr");
+        tr.dataset.id = task.id;
+
+        if (task.status === "completed") {
+            tr.classList.add("completed");
+        }
+
+        if (isSubtask) {
+            tr.classList.add("subtask-row");
+        }
+
+        const titleDisplay = isSubtask ? `<span class="ps-4">--> ${importantIcon}${task.title}</span>` : `${importantIcon}${task.title}`;
+
+        tr.innerHTML = `
         <td>${titleDisplay}</td>
         <td>${task.id}</td>
         <td style="width: 25%;">${task.description}</td>
@@ -103,156 +113,158 @@ function createTaskRow(task, isSubtask = false) {
             </div>
         </td>
     `;
-    return tr;
-}
-
-//Delete Task from the Table
-function deleteTask(button) {
-    const tr = button.closest("tr");
-    if (tr) {
-        const id = tr.dataset.id;
-        // Also remove any subtasks that belong to this task
-        tasks = tasks.filter(t => String(t.id) !== String(id) && String(t.parentId) !== String(id));
-        saveTasks();
-        renderTasks(); // Re-render to show changes
+        return tr;
     }
-}
 
-//Mark Completed on click of the button
-function completeTask(button) {
-    const tr = button.closest("tr");
-    if (tr) {
-        const id = tr.dataset.id;
-        const task = tasks.find(t => String(t.id) === String(id));
-        if (task) {
-            task.status = "completed";
+    //Delete Task from the Table
+    function deleteTask(button) {
+        const tr = button.closest("tr");
+        if (tr) {
+            const id = tr.dataset.id;
+            // Also remove any subtasks that belong to this task
+            tasks = tasks.filter(t => String(t.id) !== String(id) && String(t.parentId) !== String(id));
             saveTasks();
-
-            // Update the status badge in the table
-            const statusBadge = tr.querySelector(".statusText");
-            if (statusBadge) {
-                statusBadge.textContent = "completed";
-                statusBadge.classList.replace("bg-secondary", "bg-success");
-            }
+            renderTasks(); // Re-render to show changes
         }
-
-        tr.classList.add("completed");
-        button.disabled = true;
     }
-}
 
-//Load Tasks from Local Storage
-window.onload = function () {
-    renderTasks();
-}
+    //Mark Completed on click of the button
+    function completeTask(button) {
+        const tr = button.closest("tr");
+        if (tr) {
+            const id = tr.dataset.id;
+            const task = tasks.find(t => String(t.id) === String(id));
+            if (task) {
+                task.status = "completed";
+                saveTasks();
 
-//Save Tasks to Local Storage
-function saveTasks() {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-}
+                // Update the status badge in the table
+                const statusBadge = tr.querySelector(".statusText");
+                if (statusBadge) {
+                    statusBadge.textContent = "completed";
+                    statusBadge.classList.replace("bg-secondary", "bg-success");
+                }
+            }
 
-//Search Task with debounce function
-function debounce(func, delay) {
-    let timeout;
-    return function (...args) {
-        if (timeout) {
-            clearTimeout(timeout);
+            tr.classList.add("completed");
+            button.disabled = true;
         }
-        timeout = setTimeout(() => {
-            func.apply(this, args);
-            timeout = null;
-        }, delay);
-    };
-}
+    }
 
-//Search Task
-function performSearch() {
-    const query = document.getElementById("search").value.toLowerCase();
-    const rows = document.querySelectorAll("#tasks tr");
+    //Load Tasks from Local Storage
+    window.onload = function () {
+        renderTasks();
+    }
 
-    rows.forEach(row => {
-        const title = row.cells[0] ? row.cells[0].textContent.toLowerCase() : "";
+    //Save Tasks to Local Storage
+    function saveTasks() {
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
 
-        if (title.includes(query)) {
-            row.style.display = "";
-        } else {
-            row.style.display = "none";
+    //Search Task with debounce function
+    function debounce(func, delay) {
+        let timeout;
+        return function (...args) {
+            if (timeout) {
+                clearTimeout(timeout);
+            }
+            timeout = setTimeout(() => {
+                func.apply(this, args);
+                timeout = null;
+            }, delay);
+        };
+    }
+
+    //Search Task
+    function performSearch() {
+        const query = document.getElementById("search").value.toLowerCase();
+        const rows = document.querySelectorAll("#tasks tr");
+
+        rows.forEach(row => {
+            const title = row.cells[0] ? row.cells[0].textContent.toLowerCase() : "";
+
+            row.style.display = title.includes(query) ? "" : "none";
+        });
+    }
+    //Attach the search task function with debounce
+    const searchTask = debounce(performSearch, 300);
+
+    //Scroll Logging with throttle function
+    function throttle(func, delay) {
+        let timeout = null;
+        return function (...args) {
+            if (timeout) {
+                return;
+            }
+            timeout = setTimeout(() => {
+                func.apply(this, args);
+                timeout = null;
+            }, delay);
         }
-    });
-}
-//Attach the search task function with debounce
-const searchTask = debounce(performSearch, 300);
+    }
 
-//Scroll Logging with throttle function
-function throttle(func, delay) {
-    let timeout = null;
-    return function (...args) {
-        if (timeout) {
+    // Attach the scroll logging function to the scroll event with a throttle
+    window.addEventListener("scroll", throttle(function () { console.log("Scrolled") }, 500));
+
+    //Sub task
+    const subTaskForm = document.getElementById("subTask-form");
+    // Changed from submit ID to avoid conflicts, form submit event handles it
+    const submitBtn = document.getElementById("submit");
+
+    // Make sure that the manual submit button triggers form submission
+    if (submitBtn) {
+        submitBtn.addEventListener("click", () => subTaskForm.requestSubmit());
+    }
+
+    subTaskForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        if (!subTaskForm.checkValidity()) {
+            event.stopPropagation();
+            subTaskForm.classList.add('was-validated');
             return;
         }
-        timeout = setTimeout(() => {
-            func.apply(this, args);
-            timeout = null;
-        }, delay);
-    }
-}
 
-// Attach the scroll logging function to the scroll event with a throttle
-window.addEventListener("scroll", throttle(function () { }, 300));
+        const taskTitle = document.getElementById("subTask-title").value;
+        const taskDescription = document.getElementById("subTask-description").value;
+        const taskPriority = document.querySelector('input[name="subTaskPriority"]:checked').value;
+        const taskStatus = document.querySelector('input[name="subTaskStatus"]:checked').value;
 
-//Sub task
-const subTaskForm = document.getElementById("subTask-form");
-// Changed from submit ID to avoid conflicts, form submit event handles it
-const submitBtn = document.getElementById("submit");
+        const task = new Task(
+            taskTitle,
+            taskDescription,
+            taskPriority,
+            taskStatus,
+            currentParentId,
+        )
 
-// Make sure that the manual submit button triggers form submission
-if (submitBtn) {
-    submitBtn.addEventListener("click", () => subTaskForm.requestSubmit());
-}
+        tasks.push(task);
+        saveTasks();
+        renderTasks(); // Re-render everything to show subtask in correct position
 
-subTaskForm.addEventListener("submit", function (event) {
-    event.preventDefault();
+        // Reset the form after submitting
+        subTaskForm.reset();
+        subTaskForm.classList.remove('was-validated');
 
-    if (!subTaskForm.checkValidity()) {
-        event.stopPropagation();
-        subTaskForm.classList.add('was-validated');
-        return;
-    }
+        // Hide modal
+        const modalElement = document.getElementById('inputModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+            modal.hide();
+        }
 
-    const taskTitle = document.getElementById("subTask-title").value;
-    const taskDescription = document.getElementById("subTask-description").value;
-    const taskPriority = document.querySelector('input[name="subTaskPriority"]:checked').value;
-    const taskStatus = document.querySelector('input[name="subTaskStatus"]:checked').value;
+        currentParentId = null; // Reset
+    });
 
-    const task = {
-        title: taskTitle,
-        description: taskDescription,
-        priority: taskPriority,
-        id: validId(),
-        status: taskStatus,
-        parentId: currentParentId, // Link to parent
-        createdAt: new Date().toLocaleString()
-    };
+    // Clear validation messages on reset
+    [taskForm, subTaskForm].forEach(form => {
+        form.addEventListener("reset", () => form.classList.remove('was-validated'));
+    });
 
-    tasks.push(task);
-    saveTasks();
-    renderTasks(); // Re-render everything to show subtask in correct position
+    // Expose necessary functions to global scope for inline HTML handlers
+    window.deleteTask = deleteTask;
+    window.completeTask = completeTask;
+    window.prepareSubTask = prepareSubTask;
+    window.searchTask = searchTask;
 
-    // Reset the form after submitting
-    subTaskForm.reset();
-    subTaskForm.classList.remove('was-validated');
-
-    // Hide modal
-    const modalElement = document.getElementById('inputModal');
-    const modal = bootstrap.Modal.getInstance(modalElement);
-    if (modal) {
-        modal.hide();
-    }
-
-    currentParentId = null; // Reset
-});
-
-// Clear validation messages on reset
-subTaskForm.addEventListener("reset", function () {
-    subTaskForm.classList.remove('was-validated');
-});
+})();
