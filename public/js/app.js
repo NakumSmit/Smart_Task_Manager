@@ -151,9 +151,10 @@ const TaskApp = (function () {
         }
     }
 
-    //Load Tasks from Local Storage
-    window.onload = function () {
+    //Load Tasks from Local Storage AND API
+    window.onload = async function () {
         renderTasks();
+        await loadTask(); // Automatically fetch data without a button
     }
 
     //Save Tasks to Local Storage
@@ -260,6 +261,55 @@ const TaskApp = (function () {
     [taskForm, subTaskForm].forEach(form => {
         form.addEventListener("reset", () => form.classList.remove('was-validated'));
     });
+
+    //fetch api using promises and error handling
+    async function loadTask() {
+        const loadingState = document.getElementById("loading-state");
+        if (loadingState) {
+            loadingState.style.display = "block";
+        }
+
+        try {
+            const response = await fetch("https://jsonplaceholder.typicode.com/todos");
+
+            if (!response.ok) {
+                throw new Error(response.statusText);
+            }
+
+            const data = await response.json();
+            let newTasksAdded = false;
+
+            // Fetch limited data without a button by using slice(0, 10)
+            data.slice(0, 10).forEach(apiTask => {
+                const apiId = `api-${apiTask.id}`;
+
+                // Only add if the fetched task doesn't already exist in our list
+                if (!tasks.some(t => String(t.id) === apiId)) {
+                    const task = new Task(
+                        apiTask.title,
+                        "Fetched from API",
+                        "low",
+                        apiTask.completed ? "completed" : "pending"
+                    );
+                    task.id = apiId; // Override the random ID so we don't fetch duplicates again
+                    tasks.push(task);
+                    newTasksAdded = true;
+                }
+            });
+
+            // Re-render and save if we imported new API data
+            if (newTasksAdded) {
+                saveTasks();
+                renderTasks();
+            }
+        } catch (error) {
+            console.log("Error in fetching: " + error.message);
+        } finally {
+            if (loadingState) {
+                loadingState.style.display = "none";
+            }
+        }
+    }
 
     // Expose necessary functions to global scope for inline HTML handlers
     window.deleteTask = deleteTask;
