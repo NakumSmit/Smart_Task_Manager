@@ -1,18 +1,17 @@
-import { Task, ImportantTask } from "./models/Task.js";
-import { getTasks, saveTasks } from "./services/Storage.js";
-import { loadTask } from "./services/ApiService.js";
-import { renderTasks } from "./ui/Renderer.js";
-import { debounce, throttle } from "./utils/helpers.js";
-
-type Priority = "high" | "medium" | "low";
-type Status = "pending" | "completed";
+import { Task, ImportantTask } from "./models/Task.ts";
+import { getTasks, saveTasks } from "./services/Storage.ts";
+import { loadTask } from "./services/ApiService.ts";
+import { renderTasks } from "./ui/Renderer.ts";
+import { debounce, throttle } from "./utils/helpers.ts";
+import { Priority, Status } from "./models/Task.ts"
 
 //Get Tasks from Local Storage
 let tasks: Task[] = getTasks() || [];
 
-const taskForm: HTMLFormElement = document.getElementById("task-form") as HTMLFormElement;
+const taskForm = document.getElementById("task-form") as HTMLFormElement;
 
-taskForm.addEventListener("submit", function (event: SubmitEvent) {
+if(taskForm){
+taskForm.addEventListener("submit", function (event: SubmitEvent): void {
     event.preventDefault();
 
     if (!taskForm.checkValidity()) {
@@ -23,10 +22,10 @@ taskForm.addEventListener("submit", function (event: SubmitEvent) {
 
     const taskTitle: string = (document.getElementById("taskTitle") as HTMLInputElement).value;
     const taskDescription: string = (document.getElementById("taskDescription") as HTMLInputElement).value;
-    const taskPriority = (document.querySelector('input[name="taskPriority"]:checked') as HTMLInputElement).value as Priority;
-    const taskStatus = (document.querySelector('input[name="status"]:checked') as HTMLInputElement).value as Status;
+    const taskPriority: Priority = (document.querySelector('input[name="taskPriority"]:checked') as HTMLInputElement).value as Priority;
+    const taskStatus: Status = (document.querySelector('input[name="status"]:checked') as HTMLInputElement).value as Status;
 
-    const task = taskPriority === "high"
+    const task: Task | ImportantTask = taskPriority === "high"
         ? new ImportantTask(taskTitle, taskDescription, taskStatus)
         : new Task(taskTitle, taskDescription, taskPriority, taskStatus);
 
@@ -38,20 +37,21 @@ taskForm.addEventListener("submit", function (event: SubmitEvent) {
     taskForm.reset();
     taskForm.classList.remove('was-validated');
 });
+}
 
 let currentParentId: string | null = null;
 
 //Add SubTask
 function prepareSubTask(button: HTMLElement) {
-    const tr = button.closest("tr") as HTMLTableRowElement;
+    const tr: HTMLTableRowElement = button.closest("tr") as HTMLTableRowElement;
     if (tr) {
-        currentParentId = tr.dataset.id || null; 
+        currentParentId = tr.dataset.id || null;
     }
 }
 
 //Delete Task from the Table
-function deleteTask(button: HTMLElement) {
-    const tr = button.closest("tr") as HTMLTableRowElement;
+function deleteTask(button: HTMLElement): void {
+    const tr: HTMLTableRowElement | null = button.closest("tr");
     if (tr) {
         const id = tr.dataset.id;
         // Also remove any subtasks that belong to this task
@@ -63,16 +63,16 @@ function deleteTask(button: HTMLElement) {
 
 //Mark Completed on click of the button
 function completeTask(button: HTMLButtonElement) {
-    const tr = button.closest("tr") as HTMLTableRowElement;
+    const tr: HTMLTableRowElement | null = button.closest("tr");
     if (tr) {
-        const id = tr.dataset.id;
-        const task = tasks.find(t => String(t.id) === String(id));
+        const id: string = tr.dataset.id as string;
+        const task: Task | undefined = tasks.find(t => t.id === id);
         if (task) {
             task.status = "completed";
             saveTasks(tasks);
 
             // Update the status badge in the table
-            const statusBadge = tr.querySelector(".statusText");
+            const statusBadge: HTMLElement | null = tr.querySelector(".statusText");
             if (statusBadge) {
                 statusBadge.textContent = "completed";
                 statusBadge.classList.replace("bg-secondary", "bg-success");
@@ -85,30 +85,39 @@ function completeTask(button: HTMLButtonElement) {
 }
 
 //Load Tasks from local storage and API
-window.onload = async function () {
+window.onload = async function (): Promise<void> {
     renderTasks(tasks);
     await loadTask(); // Automatically fetch data without a button
 }
 
 //Search Task
-function performSearch() {
-    const query = (document.getElementById("search") as HTMLInputElement).value.toLowerCase();
-    const rows = document.querySelectorAll("#tasks tr") as NodeListOf<HTMLTableRowElement>;
+function performSearch(): void {
+    const query: string = (document.getElementById("search") as HTMLInputElement).value.toLowerCase();
 
-    rows.forEach(row => {
-        const title = row.cells[0] ? row.cells[0].textContent?.toLowerCase() || "" : "";
-
-        row.style.display = title.includes(query) ? "" : "none";
-    });
+    if (!query) {
+        renderTasks(tasks);
+        return;
+    }
+    const filteredTasks: Task[] = tasks.filter(t => t.title.toLowerCase().includes(query));
+    renderTasks(filteredTasks);
 }
 //Attach the search task function with debounce
-const searchTask = debounce(performSearch, 300);
+// const searchTask: () => void = debounce(performSearch, 300);
+
+//Attach the search task function with debounce
+const searchTask: () => void = debounce(performSearch, 300);
+
+const searchInput = document.getElementById("search") as HTMLInputElement | null;
+
+if (searchInput) {
+    searchInput.addEventListener("input", searchTask);
+}
 
 // Attach the scroll logging function to the scroll event with a throttle
 window.addEventListener("scroll", throttle(function () { console.log("Scrolled") }, 500));
 
 //Sub task
-const subTaskForm = document.getElementById("subTask-form") as HTMLFormElement;
+const subTaskForm: HTMLFormElement | null = document.getElementById("subTask-form") as HTMLFormElement;
 // Changed from submit ID to avoid conflicts, form submit event handles it
 const submitBtn = document.getElementById("submit");
 
@@ -117,7 +126,7 @@ if (submitBtn) {
     submitBtn.addEventListener("click", () => subTaskForm.requestSubmit());
 }
 
-subTaskForm.addEventListener("submit", function (event: SubmitEvent) {
+subTaskForm.addEventListener("submit", function (event: SubmitEvent): void {
     event.preventDefault();
 
     if (!subTaskForm.checkValidity()) {
@@ -126,12 +135,12 @@ subTaskForm.addEventListener("submit", function (event: SubmitEvent) {
         return;
     }
 
-    const taskTitle = (document.getElementById("subTask-title") as HTMLInputElement).value;
-    const taskDescription= (document.getElementById("subTask-description") as HTMLInputElement).value;
-    const taskPriority = (document.querySelector('input[name="subTaskPriority"]:checked') as HTMLInputElement).value as Priority;
-    const taskStatus = (document.querySelector('input[name="subTaskStatus"]:checked') as HTMLInputElement).value as Status;
+    const taskTitle: string = (document.getElementById("subTask-title") as HTMLInputElement).value;
+    const taskDescription: string = (document.getElementById("subTask-description") as HTMLInputElement).value;
+    const taskPriority: Priority = (document.querySelector('input[name="subTaskPriority"]:checked') as HTMLInputElement).value as Priority;
+    const taskStatus: Status = (document.querySelector('input[name="subTaskStatus"]:checked') as HTMLInputElement).value as Status;
 
-    const task = new Task(
+    const task: Task = new Task(
         taskTitle,
         taskDescription,
         taskPriority,
@@ -148,7 +157,7 @@ subTaskForm.addEventListener("submit", function (event: SubmitEvent) {
     subTaskForm.classList.remove('was-validated');
 
     // Hide modal
-    const modalElement = document.getElementById('inputModal');
+    const modalElement: HTMLElement | null = document.getElementById('inputModal');
     // @ts-ignore
     const modal = bootstrap.Modal.getInstance(modalElement);
     if (modal) {
@@ -159,7 +168,7 @@ subTaskForm.addEventListener("submit", function (event: SubmitEvent) {
 });
 
 // Clear validation messages on reset on both forms
-[taskForm, subTaskForm].forEach(form => {
+[taskForm, subTaskForm].forEach((form: HTMLFormElement) => {
     form.addEventListener("reset", () => form.classList.remove('was-validated'));
 });
 

@@ -1,7 +1,7 @@
-import { validId } from "../utils/helpers.ts";
+import { validId } from "../utils/helpers";
 
-type Priority = "high" | "medium" | "low";
-type Status = "pending" | "completed";
+export type Priority = "high" | "medium" | "low";
+export type Status = "pending" | "completed";
 
 //Task Constructor
 export class Task {
