@@ -10,33 +10,33 @@ let tasks: Task[] = getTasks() || [];
 
 const taskForm = document.getElementById("task-form") as HTMLFormElement;
 
-if(taskForm){
-taskForm.addEventListener("submit", function (event: SubmitEvent): void {
-    event.preventDefault();
+if (taskForm) {
+    taskForm.addEventListener("submit", function (event: SubmitEvent): void {
+        event.preventDefault();
 
-    if (!taskForm.checkValidity()) {
-        event.stopPropagation();
-        taskForm.classList.add('was-validated');
-        return;
-    }
+        if (!taskForm.checkValidity()) {
+            event.stopPropagation();
+            taskForm.classList.add('was-validated');
+            return;
+        }
 
-    const taskTitle: string = (document.getElementById("taskTitle") as HTMLInputElement).value;
-    const taskDescription: string = (document.getElementById("taskDescription") as HTMLInputElement).value;
-    const taskPriority: Priority = (document.querySelector('input[name="taskPriority"]:checked') as HTMLInputElement).value as Priority;
-    const taskStatus: Status = (document.querySelector('input[name="status"]:checked') as HTMLInputElement).value as Status;
+        const taskTitle: string = (document.getElementById("taskTitle") as HTMLInputElement).value;
+        const taskDescription: string = (document.getElementById("taskDescription") as HTMLInputElement).value;
+        const taskPriority: Priority = (document.querySelector('input[name="taskPriority"]:checked') as HTMLInputElement).value as Priority;
+        const taskStatus: Status = (document.querySelector('input[name="status"]:checked') as HTMLInputElement).value as Status;
 
-    const task: Task | ImportantTask = taskPriority === "high"
-        ? new ImportantTask(taskTitle, taskDescription, taskStatus)
-        : new Task(taskTitle, taskDescription, taskPriority, taskStatus);
+        const task: Task | ImportantTask = taskPriority === "high"
+            ? new (ImportantTask as any)(taskTitle, taskDescription, taskStatus)
+            : new (Task as any)(taskTitle, taskDescription, taskPriority, taskStatus);
 
-    tasks.push(task);
-    saveTasks(tasks);
-    renderTasks(tasks);
+        tasks.push(task);
+        saveTasks(tasks);
+        renderTasks(tasks);
 
-    // Reset the form after submitting
-    taskForm.reset();
-    taskForm.classList.remove('was-validated');
-});
+        // Reset the form after submitting
+        taskForm.reset();
+        taskForm.classList.remove('was-validated');
+    });
 }
 
 let currentParentId: string | null = null;
@@ -49,15 +49,30 @@ function prepareSubTask(button: HTMLElement) {
     }
 }
 
+function getAllSubtaskIds(parentId: string, allTasks: Task[]): string[] {
+    const subtasks = allTasks.filter(t => String(t.parentId) === String(parentId));
+    let ids = subtasks.map(t => String(t.id));
+    for (const st of subtasks) {
+        ids = ids.concat(getAllSubtaskIds(String(st.id), allTasks));
+    }
+    return ids;
+}
+
 //Delete Task from the Table
 function deleteTask(button: HTMLElement): void {
     const tr: HTMLTableRowElement | null = button.closest("tr");
     if (tr) {
         const id = tr.dataset.id;
-        // Also remove any subtasks that belong to this task
-        tasks = tasks.filter(t => String(t.id) !== String(id) && String(t.parentId) !== String(id));
-        saveTasks(tasks);
-        renderTasks(tasks); // Re-render to show changes
+        if (id) {
+            const idsToDelete = [String(id), ...getAllSubtaskIds(String(id), tasks)];
+            tasks = tasks.filter(t => !idsToDelete.includes(String(t.id)));
+            saveTasks(tasks);
+            if (searchInput && searchInput.value) {
+                performSearch();
+            } else {
+                renderTasks(tasks); // Re-render to show changes
+            }
+        }
     }
 }
 
@@ -92,18 +107,42 @@ window.onload = async function (): Promise<void> {
 
 //Search Task
 function performSearch(): void {
-    const query: string = (document.getElementById("search") as HTMLInputElement).value.toLowerCase();
+    const searchEl = document.getElementById("search") as HTMLInputElement | null;
+    if (!searchEl) return;
+    const query: string = searchEl.value.toLowerCase();
 
     if (!query) {
         renderTasks(tasks);
         return;
     }
-    const filteredTasks: Task[] = tasks.filter(t => t.title.toLowerCase().includes(query));
+
+    const matchedTaskIds = new Set<string>();
+    
+    // First find all matches
+    const directMatches = tasks.filter(t => 
+        t.title.toLowerCase().includes(query) || 
+        (t.description && t.description.toLowerCase().includes(query))
+    );
+    
+    // Helper to get all ancestors
+    const addAncestors = (taskId: string) => {
+        let currentTask = tasks.find(t => String(t.id) === String(taskId));
+        while (currentTask && currentTask.parentId) {
+            matchedTaskIds.add(String(currentTask.parentId));
+            currentTask = tasks.find(t => String(t.id) === String(currentTask!.parentId));
+        }
+    };
+    
+    directMatches.forEach(t => {
+        matchedTaskIds.add(String(t.id));
+        addAncestors(String(t.id));
+        const descendants = getAllSubtaskIds(String(t.id), tasks);
+        descendants.forEach(id => matchedTaskIds.add(id));
+    });
+
+    const filteredTasks: Task[] = tasks.filter(t => matchedTaskIds.has(String(t.id)));
     renderTasks(filteredTasks);
 }
-//Attach the search task function with debounce
-// const searchTask: () => void = debounce(performSearch, 300);
-
 //Attach the search task function with debounce
 const searchTask: () => void = debounce(performSearch, 300);
 
@@ -140,7 +179,7 @@ subTaskForm.addEventListener("submit", function (event: SubmitEvent): void {
     const taskPriority: Priority = (document.querySelector('input[name="subTaskPriority"]:checked') as HTMLInputElement).value as Priority;
     const taskStatus: Status = (document.querySelector('input[name="subTaskStatus"]:checked') as HTMLInputElement).value as Status;
 
-    const task: Task = new Task(
+    const task: Task = new (Task as any)(
         taskTitle,
         taskDescription,
         taskPriority,
@@ -150,7 +189,13 @@ subTaskForm.addEventListener("submit", function (event: SubmitEvent): void {
 
     tasks.push(task);
     saveTasks(tasks);
-    renderTasks(tasks); // Re-render everything to show subtask in correct position
+    
+    // Check if we are searching, modify rendering accordingly
+    if (searchInput && searchInput.value) {
+        performSearch();
+    } else {
+        renderTasks(tasks); 
+    }
 
     // Reset the form after submitting
     subTaskForm.reset();
@@ -172,16 +217,28 @@ subTaskForm.addEventListener("submit", function (event: SubmitEvent): void {
     form.addEventListener("reset", () => form.classList.remove('was-validated'));
 });
 
-//added functions to global scope for inline HTML handlers
-declare global {
-    interface Window {
-        deleteTask: typeof deleteTask;
-        completeTask: typeof completeTask;
-        prepareSubTask: typeof prepareSubTask;
-        searchTask: typeof searchTask;
-    }
+// Event delegation for dynamically added task buttons
+const tasksContainer = document.getElementById("tasks");
+if (tasksContainer) {
+    tasksContainer.addEventListener("click", (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        
+        const completeBtn = target.closest(".task-complete-btn") as HTMLButtonElement | null;
+        if (completeBtn) {
+            completeTask(completeBtn);
+            return;
+        }
+
+        const deleteBtn = target.closest(".task-delete-btn") as HTMLButtonElement | null;
+        if (deleteBtn) {
+            deleteTask(deleteBtn);
+            return;
+        }
+
+        const subtaskBtn = target.closest(".task-subtask-btn") as HTMLButtonElement | null;
+        if (subtaskBtn) {
+            prepareSubTask(subtaskBtn);
+            return;
+        }
+    });
 }
-window.deleteTask = deleteTask;
-window.completeTask = completeTask;
-window.prepareSubTask = prepareSubTask;
-window.searchTask = searchTask;
