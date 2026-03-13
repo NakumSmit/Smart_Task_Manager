@@ -1,7 +1,7 @@
 import { Task } from "../models/Task";
 
 //fetch api using promises and error handling
-export async function loadTask(): Promise<void> {
+export async function loadTask(): Promise<Task[] | void> {
     const loadingState: HTMLElement | null = document.getElementById("loading-state");
     if (loadingState) {//loading state starts
         loadingState.style.display = "flex";
@@ -15,12 +15,22 @@ export async function loadTask(): Promise<void> {
             throw new Error(response.statusText);
         }
 
-        const data: unknown = await response.json();
-        const tasks: Task[] = data as Task[] ;
+        const data: any[] = await response.json();
+        
+        // Map raw API data to our Task prototype instances
+        const apiTasks: Task[] = data.map(item => {
+            return new (Task as any)(
+                item.title,
+                "Imported from API", // mock description
+                "low", // default priority
+                item.completed ? "completed" : "pending",
+                null // top level tasks
+            );
+        });
 
-        // Display limited fetched data in the console
-        const fetchedTasks: Task[] = tasks.slice(0, 10);
-        console.log("Fetched API Tasks:", fetchedTasks);
+        // Limit the fetched data returned
+        const fetchedTasks: Task[] = apiTasks.slice(0, 10);
+        return fetchedTasks;
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.error("Error in fetching:", error.message);

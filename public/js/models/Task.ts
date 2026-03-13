@@ -45,7 +45,7 @@ export function ImportantTask(
     this.important = true;
 }
 
-// Set up prototypical inheritance (ImportantTask extends Task)
+//prototype inheritance in ImportantTask through Task
 ImportantTask.prototype = Object.create(Task.prototype);
 ImportantTask.prototype.constructor = ImportantTask;
 

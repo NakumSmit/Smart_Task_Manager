@@ -4,7 +4,12 @@ import { Task } from "../models/Task";
 export function getTasks(): Task[] | null {
     const tasks: string | null = localStorage.getItem("tasks");
     if (!tasks) return null;
-    return JSON.parse(tasks) as Task[];
+    try {
+        return JSON.parse(tasks) as Task[];
+    } catch (e) {
+        console.error("Local storage corruption detected", e);
+        return null;
+    }
 }
 
 //Save Tasks to Local Storage

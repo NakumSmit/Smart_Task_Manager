@@ -1,9 +1,9 @@
-import { Task, ImportantTask } from "./models/Task.ts";
-import { getTasks, saveTasks } from "./services/Storage.ts";
-import { loadTask } from "./services/ApiService.ts";
-import { renderTasks } from "./ui/Renderer.ts";
-import { debounce, throttle } from "./utils/helpers.ts";
-import { Priority, Status } from "./models/Task.ts"
+import { Task, ImportantTask } from "./models/Task";
+import { getTasks, saveTasks } from "./services/Storage";
+import { loadTask } from "./services/ApiService";
+import { renderTasks } from "./ui/Renderer";
+import { debounce, throttle } from "./utils/helpers";
+import { Priority, Status } from "./models/Task"
 
 //Get Tasks from Local Storage
 let tasks: Task[] = getTasks() || [];
@@ -102,7 +102,20 @@ function completeTask(button: HTMLButtonElement) {
 //Load Tasks from local storage and API
 window.onload = async function (): Promise<void> {
     renderTasks(tasks);
-    await loadTask(); // Automatically fetch data without a button
+    
+    // Automatically fetch data without a button
+    const apiTasks = await loadTask(); 
+    if (apiTasks && apiTasks.length > 0) {
+        // Merge without duplicating existing titles (since API tasks don't have stable IDs matching ours)
+        const existingTitles = new Set(tasks.map(t => t.title));
+        const newTasks = apiTasks.filter(t => !existingTitles.has(t.title));
+        
+        if (newTasks.length > 0) {
+            tasks.push(...newTasks);
+            saveTasks(tasks);
+            renderTasks(tasks);
+        }
+    }
 }
 
 //Search Task
